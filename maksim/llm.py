@@ -11,7 +11,7 @@ from typing import AsyncIterator, List
 
 import anthropic
 
-from . import log, tools
+from . import log, memory, tools
 from .config import settings
 
 
@@ -51,8 +51,15 @@ class Brain:
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
-        self.persona = persona
+        self._base_persona = persona
         self.history: List[dict] = []
+
+    @property
+    def persona(self) -> str:
+        """System prompt = base persona + currently-remembered long-term facts.
+        Re-computed each call so newly stored facts are visible without restart."""
+        facts_block = memory.facts_for_system_prompt()
+        return self._base_persona + facts_block if facts_block else self._base_persona
 
     def _trim_history(self) -> None:
         """Trim to MAX_HISTORY entries, but never split a tool_use/tool_result

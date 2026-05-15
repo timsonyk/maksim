@@ -266,6 +266,28 @@ async def press_key(key: str, modifiers: list[str] | None = None) -> dict:
     return await _run(["/usr/bin/osascript", "-e", script], timeout=5)
 
 
+async def remember(key: str, value: str, category: str = "general") -> dict:
+    """Save a long-term fact that should survive across sessions.
+    Examples of useful keys: user_name, home_city, main_project, favorite_voice,
+    preferred_llm_model. Categories: personal, preferences, projects, relationships."""
+    log.event("tool.remember", key=key, value=value[:200], category=category)
+    memory.set_fact(key, value, category)
+    return {"ok": True, "key": key, "value": value, "category": category}
+
+
+async def forget(key: str) -> dict:
+    """Forget a single long-term fact by key."""
+    log.event("tool.forget", key=key)
+    removed = memory.forget_fact(key)
+    return {"ok": removed, "key": key, "existed": removed}
+
+
+async def list_facts() -> dict:
+    """Return all long-term facts Maksim currently remembers."""
+    log.event("tool.list_facts")
+    return {"ok": True, "facts": memory.all_facts()}
+
+
 async def recall_conversation(
     since_minutes_ago: float | None = None,
     last_n_turns: int | None = None,
@@ -498,6 +520,43 @@ TOOLS_SCHEMA = [
         },
     },
     {
+        "name": "remember",
+        "description": (
+            "Save a long-term fact about the user that should be remembered across "
+            "all future sessions. Use proactively when you learn something stable: "
+            "their name, city, projects they're working on, voice/LLM preferences, "
+            "people they mention often. Use a stable snake_case `key` and concise "
+            "`value`. Pick a `category` from: personal, preferences, projects, "
+            "relationships, work, general."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "key": {"type": "string", "description": "Stable snake_case identifier, e.g. 'user_name'."},
+                "value": {"type": "string", "description": "Short value, e.g. 'Тимофей'."},
+                "category": {"type": "string", "default": "general"},
+            },
+            "required": ["key", "value"],
+        },
+    },
+    {
+        "name": "forget",
+        "description": "Remove a previously-remembered fact by its key.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"key": {"type": "string"}},
+            "required": ["key"],
+        },
+    },
+    {
+        "name": "list_facts",
+        "description": (
+            "Show ALL long-term facts you currently remember. Useful for debugging "
+            "or when the user asks 'что ты обо мне помнишь'."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "recall_conversation",
         "description": (
             "Look up past user/assistant turns from Maksim's persistent conversation "
@@ -564,6 +623,9 @@ TOOL_FUNCTIONS = {
     "type_text": type_text,
     "press_key": press_key,
     "scroll": scroll,
+    "remember": remember,
+    "forget": forget,
+    "list_facts": list_facts,
     "recall_conversation": recall_conversation,
 }
 

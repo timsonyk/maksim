@@ -1,18 +1,26 @@
-"""Persistent conversation memory.
+"""Two layers of persistent memory.
 
-Every user turn and assistant reply is appended to
-``~/.maksim/conversation.jsonl`` so Maksim can answer questions like
-"что я говорил пять минут назад" via the ``recall_conversation`` tool
-even across restarts. Audio and tool plumbing are NOT stored — only the
-final spoken text.
+1. **Conversation log** (``~/.maksim/conversation.jsonl``) — every spoken
+   user turn and assistant reply, append-only. Used by the
+   ``recall_conversation`` tool for "что я говорил пять минут назад".
 
-This file is **NEVER committed** — kept entirely under MAKSIM_HOME
-which lives outside the repo (and .jsonl is in .gitignore as a belt
-& suspenders).
+2. **Long-term facts** (``~/.maksim/long_term.json``) — structured
+   key→value pairs Maksim explicitly remembers (e.g. "user_name" =
+   "Тимофей", "main_project" = "Maksim"). Loaded into the system
+   prompt on every Brain init, written via ``remember`` / ``forget``
+   tools.
+
+Short-term memory (last ~12 turns of the current session) lives in
+``Brain.history`` in RAM — no module needed.
+
+All these files live under MAKSIM_HOME, which is OUTSIDE the repo. They
+are also explicitly listed in ``.gitignore`` (belt & suspenders).
 """
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
@@ -106,3 +114,78 @@ def recall(
         }
         for e in matches
     ]
+
+
+# ───────────────────────────────────────────────────────────────────
+# Long-term memory — structured facts that survive across sessions.
+# Loaded into the system prompt at Brain init so Maksim always knows
+# them without needing a tool call.
+# ───────────────────────────────────────────────────────────────────
+
+def _facts_path() -> Path:
+    return settings.home / "long_term.json"
+
+
+def _load_facts() -> dict:
+    p = _facts_path()
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_facts(facts: dict) -> None:
+    p = _facts_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    # Atomic write — tempfile in same dir + rename.
+    fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=".long_term.", suffix=".json.tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(facts, f, ensure_ascii=False, indent=2, sort_keys=True)
+        os.replace(tmp, p)
+    except Exception:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def set_fact(key: str, value: str, category: str = "general") -> None:
+    facts = _load_facts()
+    facts[key] = {
+        "value": value,
+        "category": category,
+        "ts": time.time(),
+    }
+    _save_facts(facts)
+
+
+def forget_fact(key: str) -> bool:
+    facts = _load_facts()
+    if key in facts:
+        del facts[key]
+        _save_facts(facts)
+        return True
+    return False
+
+
+def all_facts() -> dict:
+    return _load_facts()
+
+
+def facts_for_system_prompt() -> str:
+    """Return a compact textual summary of all long-term facts, suitable
+    for splicing into the system prompt. Empty string if no facts."""
+    facts = _load_facts()
+    if not facts:
+        return ""
+    by_cat: dict[str, list[str]] = {}
+    for k, entry in facts.items():
+        cat = entry.get("category", "general")
+        by_cat.setdefault(cat, []).append(f"  - {k}: {entry.get('value')}")
+    lines = ["", "Известные факты о пользователе (из долгосрочной памяти):"]
+    for cat in sorted(by_cat):
+        lines.append(f"[{cat}]")
+        lines.extend(by_cat[cat])
+    return "\n".join(lines)
