@@ -42,6 +42,9 @@ class WakeWordDetector:
         self.keyword = keyword
         self.threshold = threshold
         self.model = Model(wakeword_models=[model_ref], inference_framework="onnx")
+        # Score that crossed the threshold on the last wait_for_trigger() — exposed
+        # so the orchestrator can include it in the wake.fire log event for tuning.
+        self.last_score: float = 0.0
 
     def _predict_max(self, pcm_int16: np.ndarray) -> float:
         scores = self.model.predict(pcm_int16)
@@ -71,6 +74,7 @@ class WakeWordDetector:
             for chunk in chunks:
                 score = await loop.run_in_executor(None, self._predict_max, chunk)
                 if score >= self.threshold:
+                    self.last_score = float(score)
                     return
 
 

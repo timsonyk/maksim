@@ -78,11 +78,21 @@ _HALLUCINATION_PATTERNS = [
 ]
 
 
+# Whisper often mistranscribes "конец связи" on a near-silent post-wake
+# fragment as "конец связан / связу / связа / сеанса / разговора" etc.
+# Treat these as end-phrase echoes so we don't drag the LLM into them.
+_END_PHRASE_FUZZY = re.compile(
+    r"\bконец\s+(?:связ\w*|сеанса|сессии|разговора)\b", re.IGNORECASE,
+)
+
+
 def _is_end_phrase(text: str) -> bool:
     if not text:
         return False
     lc = re.sub(r"[.,!?\s]+$", "", text.lower().strip())
-    return any(p in lc for p in _END_PHRASES)
+    if any(p in lc for p in _END_PHRASES):
+        return True
+    return bool(_END_PHRASE_FUZZY.search(lc))
 
 
 def _looks_like_hallucination(text: str) -> bool:
@@ -179,7 +189,10 @@ class Maksim:
         wake_source = "stt" if stt_wake_transcript else "onnx"
 
         t_wake = time.monotonic()
-        log.event("wake.fire", source=wake_source,
+        # Include the ONNX score that crossed the threshold so we can tune
+        # WAKE_THRESHOLD from real false-positive data.
+        wake_score = self.wake.last_score if wake_source == "onnx" else 0.0
+        log.event("wake.fire", source=wake_source, score=round(wake_score, 3),
                   transcript=stt_wake_transcript or "")
         console.print(f"[green]● Wake[/green] [dim]({wake_source})[/dim]")
         self._set_status("wake")
@@ -313,6 +326,17 @@ class Maksim:
         if _is_end_phrase(text):
             log.event("wake.end_phrase_echo", text=text)
             console.print("[yellow]Конец связи (после wake) — игнорирую.[/yellow]")
+            return False
+
+        # False-positive guard: phantom ONNX wakes typically capture either
+        # silence (Whisper hallucinates "Продолжение следует…", subtitle credits,
+        # etc.) or a 1-word fragment. Drop these silently — no LLM, no TTS, no
+        # status flicker beyond what already happened — and surface them in the
+        # log so we can audit how often the wake model misfires.
+        if _looks_like_hallucination(text):
+            log.event("wake.false_positive", text=text,
+                      ms_stt=int((t_stt - t_vad) * 1000))
+            console.print(f"[yellow]Ложное срабатывание wake (\"{text}\") — игнорирую.[/yellow]")
             return False
 
         log.event("stt.text", text=text, ms_stt=int((t_stt - t_vad) * 1000))
