@@ -16,6 +16,14 @@ echo "→ Stopping any running Maksim…"
 pkill -9 -f Maksim.app 2>/dev/null || true
 sleep 1
 
+# openWakeWord ships its melspectrogram / embedding / VAD models as a runtime
+# download into <site-packages>/openwakeword/resources/models. Force the
+# download now so PyInstaller's collect_all("openwakeword") picks them up.
+# Passing a sentinel name in model_names downloads only feature + VAD models
+# (skipping ~50 MB of official wake-word models we don't use).
+echo "→ Ensuring openwakeword feature models are present…"
+uv run python -c "from openwakeword.utils import download_models; download_models(model_names=['__features_only__'])"
+
 echo "→ Building bundle…"
 uv run pyinstaller scripts/maksim.spec --noconfirm --clean
 
