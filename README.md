@@ -74,11 +74,13 @@ uv run maksim
 
 ## Wake-word
 
-По умолчанию стоит встроенное `hey_jarvis` (английское "Хей Джарвис"). Чтобы Maksim откликался на своё имя на русском, тренируем кастомную модель openWakeWord:
+По умолчанию **уже работает русское "Максим"** — модель `models/maksim.onnx` зашита в репо (обучена на синтетике Silero TTS, 50k шагов). Подхватывается из `.env.example` через `WAKE_WORD=models/maksim.onnx`.
+
+Если хочешь своё имя:
 
 1. Открой `scripts/train_wake_word.ipynb` в [Google Colab](https://colab.research.google.com)
 2. Runtime → Change runtime type → **T4 GPU**
-3. В §2 укажи `TARGET_PHRASE`, `MODEL_NAME` и `ADVERSARIAL_TEXTS` (фразы что НЕ должны триггерить)
+3. В §2 укажи `TARGET_PHRASE`, `MODEL_NAME` и `ADVERSARIAL_TEXTS` (фразы что НЕ должны триггерить — без них будет много false-positives)
 4. Runtime → Run all → ~2-3 часа
 5. Скачается `<MODEL_NAME>.onnx` и `<MODEL_NAME>.onnx.data` — положи оба в `models/`
 6. В `.env.local`:
@@ -89,7 +91,7 @@ uv run maksim
 
 Подробнее: `docs/wake_word.md`.
 
-Параллельно с onnx работает **STT-канал**: faster-whisper транскрибирует речь и реагирует, если в первых 3 словах есть твоё имя. Это страховка от пропуска wake — даже если onnx промахнётся, STT поймает.
+Параллельно с onnx работает **STT-канал**: faster-whisper транскрибирует речь и реагирует, если в первых 3 словах есть имя ("максим"). Это страховка от пропуска wake — даже если onnx промахнётся, STT поймает.
 
 ## Smoke-тесты
 
