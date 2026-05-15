@@ -38,6 +38,7 @@ for pkg in (
     "scipy",                          # used in resampling
     "rumps",                          # menu-bar UI
     "AppKit", "Foundation",           # pyobjc — rumps depends on these
+    "AVFoundation",                   # mic permission prompt at startup
     "omegaconf",                      # Silero TTS imports this dynamically inside torch.hub
     "antlr4",                         # omegaconf runtime dep
 ):
@@ -100,7 +101,10 @@ exe = EXE(
     # remembers permissions (mic / Accessibility / Screen Recording) between
     # rebuilds — adhoc signing reset them every time.
     codesign_identity="Apple Development: timsonyk@gmail.com (YLUF3LQ7MY)",
-    entitlements_file=None,
+    # Hardened Runtime is on (flags=0x10000) — Info.plist usage strings are
+    # not enough; restricted APIs (mic, AppleEvents, JIT pages) need explicit
+    # entitlements or they silently no-op at runtime.
+    entitlements_file=str(PROJECT_ROOT / "scripts" / "maksim.entitlements"),
 )
 
 coll = COLLECT(

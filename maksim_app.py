@@ -28,6 +28,7 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 import traceback
 from pathlib import Path
 
@@ -36,6 +37,49 @@ import rumps
 from maksim.__main__ import _missing_keys
 from maksim.orchestrator import Maksim
 from maksim.config import settings
+
+
+def _ensure_mic_permission() -> None:
+    """Force the macOS TCC microphone prompt on first launch.
+
+    LSUIElement bundles (no Dock icon) don't get a TCC prompt automatically
+    when sounddevice/PortAudio opens an InputStream — CoreAudio silently
+    delivers zeros. We must explicitly call AVCaptureDevice.requestAccess
+    so macOS surfaces the dialog, and pump the main runloop while it's open.
+    """
+    try:
+        import AVFoundation
+        from Foundation import NSDate, NSRunLoop
+    except Exception as e:
+        print(f"[maksim] AVFoundation unavailable, skipping mic prompt: {e}",
+              file=sys.stderr)
+        return
+
+    media = AVFoundation.AVMediaTypeAudio
+    # 0=not determined, 1=restricted, 2=denied, 3=authorized
+    status = AVFoundation.AVCaptureDevice.authorizationStatusForMediaType_(media)
+    if status == 3:
+        return
+    if status in (1, 2):
+        print("[maksim] microphone access is denied — toggle it on under "
+              "System Settings → Privacy & Security → Microphone, then "
+              "restart Maksim.", file=sys.stderr)
+        return
+
+    done = threading.Event()
+
+    def _cb(granted):
+        print(f"[maksim] mic permission granted={bool(granted)}", file=sys.stderr)
+        done.set()
+
+    AVFoundation.AVCaptureDevice.requestAccessForMediaType_completionHandler_(
+        media, _cb,
+    )
+    # Pump the main runloop so the system dialog can render and the
+    # completion handler fires. 30 s gives the user time to react.
+    deadline = time.monotonic() + 30
+    while not done.is_set() and time.monotonic() < deadline:
+        NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.1))
 
 
 _ICONS = {
@@ -187,6 +231,9 @@ class MaksimStatusBarApp(rumps.App):
 
 
 def main() -> None:
+    # Must run BEFORE the Maksim thread opens its audio InputStream — otherwise
+    # the bundle has no chance to register a TCC mic request.
+    _ensure_mic_permission()
     MaksimStatusBarApp().run()
 
 

@@ -22,6 +22,7 @@ dependencies = [
     "websockets>=13.0",
     "rumps>=0.4.0",
     "omegaconf>=2.3.0",
+    "pyobjc-framework-avfoundation>=10.0",
 ]
 
 [project.scripts]

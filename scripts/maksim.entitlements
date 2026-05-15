@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required because PyInstaller signs with Hardened Runtime (flags=0x10000):
+         every restricted API needs an explicit entitlement, even though the
+         Info.plist already has the usage-description strings. -->
+
+    <!-- Microphone: NSMicrophoneUsageDescription alone is not enough under
+         Hardened Runtime. Without this, AVCaptureDevice.requestAccess silently
+         no-ops and CoreAudio feeds the InputStream zeros. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+
+    <!-- AppleEvents: required for run_applescript / open_app / notify tools
+         that drive other applications. -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+
+    <!-- PyTorch/onnxruntime JITs and `cffi`/`ctypes` mark memory pages as
+         executable at runtime; Hardened Runtime blocks this by default. -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+
+    <!-- Some bundled .dylibs (portaudio, ctranslate2) are not signed by
+         Apple-issued certs; library validation would otherwise reject them. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+</dict>
+</plist>
