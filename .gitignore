@@ -18,12 +18,15 @@ __pycache__/
 dist/
 build/
 
-# Custom-trained wake models (per-user — пусть каждый тренирует свою)
+# Custom wake models — игнорим любые свежие/чужие, но allow-list для baseline
+# "максим" модели, которая шипится с репо.
 models/*.onnx
 models/*.onnx.data
 models/*.tflite
 models/*.pt
 models/*.bin
+!models/maksim.onnx
+!models/maksim.onnx.data
 
 # IDE / OS
 .DS_Store
