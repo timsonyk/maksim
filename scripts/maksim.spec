@@ -116,7 +116,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name="Maksim.app",
-    icon=None,
+    icon=str(PROJECT_ROOT / "scripts" / "maksim.icns"),
     bundle_identifier="com.timofey.maksim",
     version="0.1.0",
     info_plist={
