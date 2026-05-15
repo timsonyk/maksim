@@ -1,0 +1,44 @@
+# Secrets — НИКОГДА не коммитим
+.env
+.env.local
+.env.*.local
+
+# uv / venv
+.venv/
+.python-version
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# Build artifacts (PyInstaller)
+dist/
+build/
+
+# Custom-trained wake models (per-user — пусть каждый тренирует свою)
+models/*.onnx
+models/*.onnx.data
+models/*.tflite
+models/*.pt
+models/*.bin
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+.claude/   # local Claude Code settings, never share
+
+# Test/coverage caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# Logs
+*.log
+log.jsonl
