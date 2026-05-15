@@ -578,61 +578,6 @@ wheels = [
 ]
 
 [[package]]
-name = "jarvis"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "anthropic" },
-    { name = "elevenlabs" },
-    { name = "faster-whisper" },
-    { name = "groq" },
-    { name = "httpx" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "onnxruntime" },
-    { name = "openwakeword" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "python-dotenv" },
-    { name = "rich" },
-    { name = "rumps" },
-    { name = "silero-vad" },
-    { name = "sounddevice" },
-    { name = "soundfile" },
-    { name = "websockets" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pyinstaller" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "anthropic", specifier = ">=0.40.0" },
-    { name = "elevenlabs", specifier = ">=1.50.0" },
-    { name = "faster-whisper", specifier = ">=1.1.0" },
-    { name = "groq", specifier = ">=0.13.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "numpy", specifier = ">=1.26.0,<2.3" },
-    { name = "omegaconf", specifier = ">=2.3.0" },
-    { name = "onnxruntime", specifier = ">=1.20.0" },
-    { name = "openwakeword", specifier = ">=0.6.0" },
-    { name = "pydantic", specifier = ">=2.9.0" },
-    { name = "pydantic-settings", specifier = ">=2.6.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "rich", specifier = ">=13.9.0" },
-    { name = "rumps", specifier = ">=0.4.0" },
-    { name = "silero-vad", specifier = ">=5.1.0" },
-    { name = "sounddevice", specifier = ">=0.5.1" },
-    { name = "soundfile", specifier = ">=0.12.1" },
-    { name = "websockets", specifier = ">=13.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pyinstaller", specifier = ">=6.20.0" }]
-
-[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -754,6 +699,61 @@ sdist = { url = "https://files.pythonhosted.org/packages/10/2f/97589876ea9674879
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c7/d1/a9f36f8ecdf0fb7c9b1e78c8d7af12b8c8754e74851ac7b94a8305540fc7/macholib-1.16.4-py2.py3-none-any.whl", hash = "sha256:da1a3fa8266e30f0ce7e97c6a54eefaae8edd1e5f86f3eb8b95457cae90265ea", size = 38117, upload-time = "2025-11-22T08:28:36.939Z" },
 ]
+
+[[package]]
+name = "maksim"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "anthropic" },
+    { name = "elevenlabs" },
+    { name = "faster-whisper" },
+    { name = "groq" },
+    { name = "httpx" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "onnxruntime" },
+    { name = "openwakeword" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "rich" },
+    { name = "rumps" },
+    { name = "silero-vad" },
+    { name = "sounddevice" },
+    { name = "soundfile" },
+    { name = "websockets" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyinstaller" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", specifier = ">=0.40.0" },
+    { name = "elevenlabs", specifier = ">=1.50.0" },
+    { name = "faster-whisper", specifier = ">=1.1.0" },
+    { name = "groq", specifier = ">=0.13.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "numpy", specifier = ">=1.26.0,<2.3" },
+    { name = "omegaconf", specifier = ">=2.3.0" },
+    { name = "onnxruntime", specifier = ">=1.20.0" },
+    { name = "openwakeword", specifier = ">=0.6.0" },
+    { name = "pydantic", specifier = ">=2.9.0" },
+    { name = "pydantic-settings", specifier = ">=2.6.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "rich", specifier = ">=13.9.0" },
+    { name = "rumps", specifier = ">=0.4.0" },
+    { name = "silero-vad", specifier = ">=5.1.0" },
+    { name = "sounddevice", specifier = ">=0.5.1" },
+    { name = "soundfile", specifier = ">=0.12.1" },
+    { name = "websockets", specifier = ">=13.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pyinstaller", specifier = ">=6.20.0" }]
 
 [[package]]
 name = "markdown-it-py"

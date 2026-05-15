@@ -42,6 +42,10 @@ models/*.bin
 htmlcov/
 .coverage
 
-# Logs
+# Logs and conversation memory — НИКОГДА не коммитим (личная переписка)
 *.log
+*.jsonl
 log.jsonl
+conversation.jsonl
+memory/
+.maksim/

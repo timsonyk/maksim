@@ -8,7 +8,7 @@ from typing import AsyncIterator, Callable, Optional
 
 from rich.console import Console
 
-from . import log
+from . import log, memory
 from .audio import make_audio
 from .config import settings
 from .llm import make_brain
@@ -327,9 +327,11 @@ class Maksim:
         user says 'Максим' over the assistant's voice, we cancel TTS and
         immediately treat it as a new turn."""
         self._set_status("thinking")
+        memory.append_turn("user", text)
         first_audio_logged = [False]
         talking_started = [False]
         cancel_event = asyncio.Event()
+        spoken_parts: list[str] = []
 
         async def sentence_iter() -> AsyncIterator[str]:
             async for sentence in self.brain.stream_turn(text):
@@ -343,6 +345,7 @@ class Maksim:
                 if not talking_started[0]:
                     self._set_status("talking")
                     talking_started[0] = True
+                spoken_parts.append(sentence)
                 console.print(f"[green]🤖 {sentence}[/green]")
                 yield sentence
 
@@ -381,6 +384,10 @@ class Maksim:
         finally:
             if not bargein_fired:
                 await self._drain_playback()
+
+        # Persist what was actually spoken (skips parts cut off by barge-in).
+        if spoken_parts:
+            memory.append_turn("assistant", " ".join(spoken_parts))
 
         log.event("turn.done", total_ms=int((time.monotonic() - t_wake) * 1000),
                   bargein=bargein_fired)

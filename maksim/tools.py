@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from . import log
+from . import log, memory
 from .config import settings
 
 
@@ -266,6 +266,28 @@ async def press_key(key: str, modifiers: list[str] | None = None) -> dict:
     return await _run(["/usr/bin/osascript", "-e", script], timeout=5)
 
 
+async def recall_conversation(
+    since_minutes_ago: float | None = None,
+    last_n_turns: int | None = None,
+    query: str | None = None,
+    limit: int = 40,
+) -> dict:
+    """Look up past user/assistant turns from the persistent conversation log.
+    Use when the user asks 'что я говорил...', 'о чём мы говорили...',
+    'напомни что обсуждали' — even when referring to a previous session."""
+    log.event("tool.recall_conversation",
+              since_minutes_ago=since_minutes_ago,
+              last_n_turns=last_n_turns,
+              query=query, limit=limit)
+    entries = memory.recall(
+        since_minutes_ago=since_minutes_ago,
+        last_n_turns=last_n_turns,
+        query=query,
+        limit=limit,
+    )
+    return {"ok": True, "count": len(entries), "turns": entries}
+
+
 async def scroll(dx: int = 0, dy: int = 0) -> dict:
     """Scroll by (dx, dy) units. Positive dy scrolls down."""
     log.event("tool.scroll", dx=dx, dy=dy)
@@ -476,6 +498,40 @@ TOOLS_SCHEMA = [
         },
     },
     {
+        "name": "recall_conversation",
+        "description": (
+            "Look up past user/assistant turns from Maksim's persistent conversation "
+            "log. Use this when the user asks things like 'что я говорил пять минут "
+            "назад', 'о чём мы говорили час назад', 'напомни что обсуждали вчера', "
+            "or 'найди в истории про X'. Works ACROSS sessions — past restarts. "
+            "Filter by time (since_minutes_ago), recent turn count (last_n_turns), "
+            "or a keyword (query). Returns a list of {time, role, text, session}."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "since_minutes_ago": {
+                    "type": "number",
+                    "description": "Return turns from the last N minutes (e.g. 5 for 'пять минут назад').",
+                },
+                "last_n_turns": {
+                    "type": "integer",
+                    "description": "Return the most recent N turns regardless of time.",
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Case-insensitive substring to search for in turn text.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "default": 40,
+                    "description": "Hard cap on returned entries (default 40).",
+                },
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "scroll",
         "description": "Scroll the focused window. Positive dy scrolls down by dy lines.",
         "input_schema": {
@@ -508,6 +564,7 @@ TOOL_FUNCTIONS = {
     "type_text": type_text,
     "press_key": press_key,
     "scroll": scroll,
+    "recall_conversation": recall_conversation,
 }
 
 
